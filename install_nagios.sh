@@ -15,8 +15,13 @@ cd nagios-4.5.6
 sudo ./configure --with-httpd-conf=/etc/apache2/sites-enabled
 sudo make all
 
-# Create user and group
+# Create user and group (and verify)
 sudo make install-groups-users
+if ! id "nagios" &>/dev/null; then
+  echo "Nagios user missing — creating manually..."
+  sudo groupadd nagios
+  sudo useradd -g nagios nagios
+fi
 sudo usermod -aG nagios www-data
 
 # Install Nagios binaries and configs
@@ -45,6 +50,10 @@ WantedBy=multi-user.target
 EOF
 fi
 
+# Set ownership and permissions
+sudo chown -R nagios:nagios /usr/local/nagios
+sudo chmod -R 755 /usr/local/nagios
+
 # Reload systemd daemon
 sudo systemctl daemon-reload
 
@@ -59,4 +68,3 @@ sudo htpasswd -b -c /usr/local/nagios/etc/htpasswd.users nagiosadmin admin123
 
 echo "✅ Nagios installation complete."
 echo "🌐 Access it via: http://$(curl -s ifconfig.me)/nagios"
-
